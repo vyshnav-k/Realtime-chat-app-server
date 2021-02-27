@@ -30,7 +30,6 @@ module.exports = {
   getUser(id) {
     return new Promise((resolve, reject) => {
       const user = users.find((u) => u.id === id);
-      console.log("prisjkyi");
       console.log(users);
       resolve(user);
     });

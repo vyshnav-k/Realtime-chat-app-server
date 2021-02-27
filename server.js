@@ -23,28 +23,45 @@ io.on("connection", (socket) => {
     userHelpers
       .addUsers(socket.id, name, room)
       .then((user) => {
-        console.log(user);
         socket.emit("message", {
           user: "admin",
           text: `Welcome ${user.name} to ${user.room}`,
         });
         socket.broadcast
           .to(user.room)
-          .emit("message", `${user.name} has joined to ${user.room}`);
+          .emit("message", {
+            user: "admin",
+            text: `${user.name} has joined !!`,
+          });
         socket.join(user.room);
-        callback();
+        io.to(user.room).emit("roomData", {
+          room: user.room,
+          users: userHelpers.getUserRoom(user.room),
+        });
+        
       })
       .catch((status) => {
         console.log(status);
+        callback(status);
       });
-  });
-  socket.on("disconnect", () => {
-    console.log("User left");
   });
   socket.on("sendMessage", (message, callback) => {
     getUser(socket.id).then((user) => {
       io.to(user.room).emit("message", { user: user.name, text: message });
+      io.to(user.room).emit("roomData", {
+        room: user.room,
+        users: userHelpers.getUserRoom(user.room),
+      });
       callback();
+    });
+  });
+  socket.on("disconnect", async () => {
+    const user = await userHelpers.getUser(socket.id);
+    userHelpers.removeUser(socket.id);
+
+    io.to(user.room).emit("message", {
+      user: "admin",
+      text: `${user.name} has left the room!!`,
     });
   });
 });
